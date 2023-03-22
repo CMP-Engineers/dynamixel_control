@@ -304,8 +304,9 @@ return_type DynamixelHardware::write()
   std::copy(joint_ids_.begin(), joint_ids_.end(), ids.begin());
   const char * log = nullptr;
 
-  if (std::any_of(
-        joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != 0.0; })) {
+  if ((control_mode_ == ControlMode::Velocity) ||  
+  (std::any_of(
+        joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != 0.0; })) ){
     // Velocity control
     set_control_mode(ControlMode::Velocity);
     for (uint i = 0; i < ids.size(); i++) {

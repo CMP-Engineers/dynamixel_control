@@ -306,7 +306,11 @@ return_type DynamixelHardware::write()
 
   // Update command velocities (and set velocity control mode) if:
   // - any joints have command velocities which differ from state velocities
-  if (std::any_of(joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != j.state.velocity; })) {
+  if (
+    // std::any_of(joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != j.state.velocity; })
+    (control_mode_ == ControlMode::Velocity) ||  
+    (std::any_of(joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != 0.0; })) 
+    ) {
     // Velocity control
     set_control_mode(ControlMode::Velocity);
     for (uint i = 0; i < ids.size(); i++) {

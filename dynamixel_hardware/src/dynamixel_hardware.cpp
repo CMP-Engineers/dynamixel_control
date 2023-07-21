@@ -435,6 +435,7 @@ CallbackReturn DynamixelHardware::set_joint_positions()
         kGoalPositionIndex, ids.data(), ids.size(), commands.data(), 1, &log)) {
     RCLCPP_ERROR(rclcpp::get_logger(kDynamixelHardware), "%s", log);
   }
+  return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn DynamixelHardware::set_joint_velocities()
@@ -452,6 +453,7 @@ CallbackReturn DynamixelHardware::set_joint_velocities()
         kGoalVelocityIndex, ids.data(), ids.size(), commands.data(), 1, &log)) {
     RCLCPP_ERROR(rclcpp::get_logger(kDynamixelHardware), "%s", log);
   }
+  return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn DynamixelHardware::set_joint_params()
@@ -469,6 +471,7 @@ CallbackReturn DynamixelHardware::set_joint_params()
       }
     }
   }
+  return CallbackReturn::SUCCESS;
 }
 
 }  // namespace dynamixel_hardware

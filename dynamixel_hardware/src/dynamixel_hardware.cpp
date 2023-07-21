@@ -67,6 +67,9 @@ CallbackReturn DynamixelHardware::on_init(const hardware_interface::HardwareInfo
     joints_[i].command.position = std::numeric_limits<double>::quiet_NaN();
     joints_[i].command.velocity = std::numeric_limits<double>::quiet_NaN();
     joints_[i].command.effort = std::numeric_limits<double>::quiet_NaN();
+    joints_[i].prev_command.position = joints_[i].command.position;
+    joints_[i].prev_command.velocity = joints_[i].command.velocity;
+    joints_[i].prev_command.effort = joints_[i].command.effort;
     RCLCPP_INFO(rclcpp::get_logger(kDynamixelHardware), "joint_id %d: %d", i, joint_ids_[i]);
   }
 
@@ -281,6 +284,7 @@ return_type DynamixelHardware::write(const rclcpp::Time & /* time */, const rclc
 {
   if (use_dummy_) {
     for (auto & joint : joints_) {
+      joint.prev_command.position = joint.command.position;
       joint.state.position = joint.command.position;
     }
     return return_type::OK;
@@ -288,15 +292,16 @@ return_type DynamixelHardware::write(const rclcpp::Time & /* time */, const rclc
 
   // Velocity control
   if (std::any_of(
-        joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != 0.0; })) {
+        joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != j.prev_command.velocity; })) {
     set_control_mode(ControlMode::Velocity);
     set_joint_velocities();
     return return_type::OK;
   }
   
   // Position control
+  // Dynamixel command positions may be non-zero (but unchanging) when in  )
   if (std::any_of(
-        joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.position != 0.0; })) {
+        joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.position != j.prev_command.position; })) {
     set_control_mode(ControlMode::Position);
     set_joint_positions();
     return return_type::OK;
@@ -309,7 +314,7 @@ return_type DynamixelHardware::write(const rclcpp::Time & /* time */, const rclc
     return return_type::ERROR;
   }
 
-  // if all command values are zero, then remain in existing control mode and set corresponding zero values
+  // if all command values are unchanged, then remain in existing control mode and set corresponding command values
   switch (control_mode_) {
     case ControlMode::Velocity:
       set_joint_velocities();
@@ -415,6 +420,9 @@ return_type DynamixelHardware::reset_command()
     joints_[i].command.position = joints_[i].state.position;
     joints_[i].command.velocity = 0.0;
     joints_[i].command.effort = 0.0;
+    joints_[i].prev_command.position = joints_[i].command.position;
+    joints_[i].prev_command.velocity = joints_[i].command.velocity;
+    joints_[i].prev_command.effort = joints_[i].command.effort;
   }
 
   return return_type::OK;
@@ -428,6 +436,7 @@ CallbackReturn DynamixelHardware::set_joint_positions()
 
   std::copy(joint_ids_.begin(), joint_ids_.end(), ids.begin());
   for (uint i = 0; i < ids.size(); i++) {
+    joints_[i].prev_command.position = joints_[i].command.position;
     commands[i] = dynamixel_workbench_.convertRadian2Value(
       ids[i], static_cast<float>(joints_[i].command.position));
   }
@@ -446,6 +455,7 @@ CallbackReturn DynamixelHardware::set_joint_velocities()
 
   std::copy(joint_ids_.begin(), joint_ids_.end(), ids.begin());
   for (uint i = 0; i < ids.size(); i++) {
+    joints_[i].prev_command.velocity = joints_[i].command.velocity;
     commands[i] = dynamixel_workbench_.convertVelocity2Value(
       ids[i], static_cast<float>(joints_[i].command.velocity));
   }

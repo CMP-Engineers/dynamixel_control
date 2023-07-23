@@ -294,6 +294,10 @@ return_type DynamixelHardware::write(const rclcpp::Time & /* time */, const rclc
   if (std::any_of(
         joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.velocity != j.prev_command.velocity; })) {
     set_control_mode(ControlMode::Velocity);
+    if(mode_changed_)
+    {
+      set_joint_params();
+    }
     set_joint_velocities();
     return return_type::OK;
   }
@@ -303,6 +307,10 @@ return_type DynamixelHardware::write(const rclcpp::Time & /* time */, const rclc
   if (std::any_of(
         joints_.cbegin(), joints_.cend(), [](auto j) { return j.command.position != j.prev_command.position; })) {
     set_control_mode(ControlMode::Position);
+    if(mode_changed_)
+    {
+      set_joint_params();
+    }
     set_joint_positions();
     return return_type::OK;
   }
@@ -362,6 +370,7 @@ return_type DynamixelHardware::enable_torque(const bool enabled)
 return_type DynamixelHardware::set_control_mode(const ControlMode & mode, const bool force_set)
 {
   const char * log = nullptr;
+  mode_changed_ = false;
 
   if (mode == ControlMode::Velocity && (force_set || control_mode_ != ControlMode::Velocity)) {
     bool torque_enabled = torque_enabled_;
@@ -376,7 +385,11 @@ return_type DynamixelHardware::set_control_mode(const ControlMode & mode, const 
       }
     }
     RCLCPP_INFO(rclcpp::get_logger(kDynamixelHardware), "Velocity control");
-    control_mode_ = ControlMode::Velocity;
+    if(control_mode_ != ControlMode::Velocity)
+    {
+      mode_changed_ = true;
+      control_mode_ = ControlMode::Velocity;
+    }
 
     if (torque_enabled) {
       enable_torque(true);
@@ -397,7 +410,11 @@ return_type DynamixelHardware::set_control_mode(const ControlMode & mode, const 
       }
     }
     RCLCPP_INFO(rclcpp::get_logger(kDynamixelHardware), "Position control");
-    control_mode_ = ControlMode::Position;
+    if(control_mode_ != ControlMode::Position)
+    {
+      mode_changed_ = true;
+      control_mode_ = ControlMode::Position;
+    }
 
     if (torque_enabled) {
       enable_torque(true);

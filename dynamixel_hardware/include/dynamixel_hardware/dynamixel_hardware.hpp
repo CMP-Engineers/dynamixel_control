@@ -51,7 +51,7 @@ enum class ControlMode {
   Position,
   Velocity,
   Torque,
-  Currrent,
+  Current,
   ExtendedPosition,
   MultiTurn,
   CurrentBasedPosition,
@@ -94,6 +94,7 @@ private:
 
   CallbackReturn set_joint_positions();
   CallbackReturn set_joint_velocities();
+  CallbackReturn set_joint_currents();
   CallbackReturn set_joint_params();
 
   DynamixelWorkbench dynamixel_workbench_;
@@ -103,6 +104,7 @@ private:
   bool torque_enabled_{false};
   ControlMode control_mode_{ControlMode::Position};
   bool mode_changed_{false};
+  bool update_params_{false};
   bool use_dummy_{false};
 };
 }  // namespace dynamixel_hardware
